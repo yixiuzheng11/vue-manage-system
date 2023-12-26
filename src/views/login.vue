@@ -32,8 +32,10 @@
             <img class="login-code-img" :src="captchaBase64Image" @click="getCaptcha" alt="图形验证码">
           </div>-->
         </el-form-item>
-        <el-form-item prop="captchaCode" :inline="true">
-          <img class="login-code-img" :src="captchaBase64Image" @click="getCaptchaCode" alt="图形验证码">
+        <el-form-item prop="captchaImage" :inline="true">
+          <el-input v-model="param.captchaUuid" hidden>
+          </el-input>
+          <img class="login-code-img" :src="captchaBase64Image" @click="getCaptchaImage" alt="图形验证码">
         </el-form-item>
 
         <div class="login-btn">
@@ -58,24 +60,26 @@ import { getCaptcha, doLogin } from '../api/login';
 interface LoginInfo {
   userName: string;
   password: string;
-  captchaCode:string;
+  captchaUuid: string;
+  captchaCode: string;
 }
 
 const router = useRouter();
 const param = reactive<LoginInfo>({
   userName: 'admin',
   password: '123123',
+  captchaUuid: '',
   captchaCode: ''
 });
 
 const captchaBase64Image = ref();
-getCaptchaCode();
-function getCaptchaCode() {
+getCaptchaImage();
+function getCaptchaImage() {
   try {
     getCaptcha().then(res => {
-      var respData = 'data:image/png;base64,' + btoa(new Uint8Array(res.data).reduce((data,
-                                                                                      byte) => data + String.fromCharCode(byte), ''));
-      captchaBase64Image.value = respData;
+      //console.log(res);
+      captchaBase64Image.value = res.data.captchaImage;
+      param.captchaUuid = res.data.captchaUuid;
     });
   } catch (e) {
     console.log(e);
@@ -106,7 +110,7 @@ const submitForm = (formEl: FormInstance | undefined) => {
       // localStorage.setItem('ms_keys', JSON.stringify(keys));
       // router.push('/');
       doLogin(param).then(res => {
-        let { code, data, msg } = res.data;
+        let { code, data, msg } = res;
         if(code=='SUCCESS') {
           //console.log(res);
           ElMessage.success('登录成功');

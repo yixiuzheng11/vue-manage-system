@@ -6,7 +6,7 @@ export function getCaptcha() {
     return request({
         url: '/login/getCaptcha?requestId='+time,
         method: 'get',
-        responseType: 'arraybuffer'
+        responseType: 'json'
     });
 };
 

@@ -1,10 +1,10 @@
 import axios, {AxiosInstance, AxiosError, AxiosResponse, AxiosRequestConfig} from 'axios';
 
 const service:AxiosInstance = axios.create({
-    // axios中请求配置有baseURL选项，表示请求URL公共部分
+    //api的base_url
     baseURL: process.env.BASE_API,
-    timeout: 5000,
-    withCredentials: true
+    // 请求超时时间
+    timeout: 5000
 });
 
 service.interceptors.request.use(
@@ -19,11 +19,10 @@ service.interceptors.request.use(
 
 service.interceptors.response.use(
     (response: AxiosResponse) => {
-        if (response.status === 200) {
-            return response;
-        } else {
-            Promise.reject();
+        if (response.status === 200 ) {
+            return response.data;
         }
+        return Promise.reject();
     },
     (error: AxiosError) => {
         console.log(error);
