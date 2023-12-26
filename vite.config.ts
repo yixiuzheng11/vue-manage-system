@@ -18,5 +18,10 @@ export default defineConfig({
 	],
 	optimizeDeps: {
 		include: ['schart.js']
-	}
+	},
+	define: {
+		'process.env': {
+		  'BASE_API':"http://localhost:8888"
+		}
+	  },
 });

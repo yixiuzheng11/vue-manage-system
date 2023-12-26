@@ -2,7 +2,7 @@ import axios, {AxiosInstance, AxiosError, AxiosResponse, AxiosRequestConfig} fro
 
 const service:AxiosInstance = axios.create({
     // axios中请求配置有baseURL选项，表示请求URL公共部分
-    baseURL: process.env.BASE_API,
+    baseURL: 'http://localhost:5173',
     timeout: 5000,
     withCredentials: true
 });
@@ -21,9 +21,8 @@ service.interceptors.response.use(
     (response: AxiosResponse) => {
         if (response.status === 200) {
             return response;
-        } else {
-            Promise.reject();
         }
+        return Promise.reject();
     },
     (error: AxiosError) => {
         console.log(error);
