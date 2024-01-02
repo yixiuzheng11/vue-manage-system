@@ -53,6 +53,7 @@
 import {computed} from 'vue';
 import { useSidebarStore } from '../store/sidebar';
 import { useRoute } from 'vue-router';
+import {usePermissStore} from "../store/permiss";
 
 
 const route = useRoute();
@@ -61,6 +62,9 @@ const onRoutes = computed(() => {
 });
 
 const sidebarStore = useSidebarStore();
+const permStore = usePermissStore();
+const items = permStore.menus;
+console.log(items);
 </script>
 
 <style scoped>

@@ -122,16 +122,15 @@ interface MenuItem {
 }
 
 //查询菜单
+const permStore = usePermissStore();
 function getMenuRoute() {
   getNav().then(res => {
-    console.log(JSON.stringify(res));
-    let items: MenuItem[] = res.data.menuList;
+    let menus: MenuItem[] = res.data.menuList;
     //保存用户所具有的的菜单权限
-    const permStore = usePermissStore();
     permStore.setPerms(res.data.permList);
-    //console.log("ms_perms-----", res.data.permList);
+    permStore.setMenus(menus);
     //根据菜单生成路由
-    const menuRoutes = generateRoutes(items);
+    const menuRoutes = generateRoutes(menus);
     //生成首页路由
     const homeRoute: RouteRecordRaw = { path:'/', name:'home', children: menuRoutes,
       component: () => import('../views/home.vue'),
