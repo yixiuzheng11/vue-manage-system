@@ -4,19 +4,26 @@ import {encrypt} from '../utils/encrypt';
 export function getCaptcha() {
     const time = new Date().getTime();
     return request({
-        url: '/login/getCaptcha?requestId='+time,
+        url: '/login/getCaptcha?requestId=' + time,
         method: 'get',
         responseType: 'json'
     });
 };
 
-export function doLogin(param: any) {
+export interface LoginParam {
+    userName: string;
+    password: string;
+    captchaCode: string;
+    captchaUuid: string;
+}
+
+export function doLogin(param: LoginParam) {
     let loginParam = {
         ...param
     }
     //密码加密
     loginParam.password = encrypt(loginParam.password).toString();
-    console.log(loginParam.password);
+    //console.log(loginParam.password);
     return request({
         url: '/login/doLogin',
         method: 'post',

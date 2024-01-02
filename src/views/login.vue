@@ -28,14 +28,10 @@
               <el-button :icon="Lock"></el-button>
             </template>
           </el-input>
-          <!-- <div class="login-code">
-            <img class="login-code-img" :src="captchaBase64Image" @click="getCaptcha" alt="图形验证码">
-          </div>-->
         </el-form-item>
         <el-form-item prop="captchaImage" :inline="true">
-          <el-input v-model="param.captchaUuid" hidden>
-          </el-input>
-          <img class="login-code-img" :src="captchaBase64Image" @click="getCaptchaImage" alt="图形验证码">
+          <el-input v-model="param.captchaUuid" v-bind:type="'hidden'"/>
+          <img class="login-code-img" :src="captchaImage" @click="getCaptchaImage" alt="图形验证码">
         </el-form-item>
 
         <div class="login-btn">
@@ -51,34 +47,28 @@
 import { ref, reactive, createHydrationRenderer, onMounted } from 'vue';
 import { useTagsStore } from '../store/tags';
 import { usePermissStore } from '../store/permiss';
-import { useRouter } from 'vue-router';
+import {RouteRecordRaw, useRouter} from 'vue-router';
 import { ElMessage } from 'element-plus';
 import type { FormInstance, FormRules } from 'element-plus';
 import { Lock, User } from '@element-plus/icons-vue';
-import { getCaptcha, doLogin } from '../api/login';
-
-interface LoginInfo {
-  userName: string;
-  password: string;
-  captchaUuid: string;
-  captchaCode: string;
-}
+import {getCaptcha, doLogin, LoginParam} from '../api/login';
+import {getNav} from "../api";
 
 const router = useRouter();
-const param = reactive<LoginInfo>({
+const param = reactive<LoginParam>({
   userName: 'admin',
   password: '123123',
-  captchaUuid: '',
-  captchaCode: ''
+  captchaCode: '',
+  captchaUuid: ''
 });
 
-const captchaBase64Image = ref();
+const captchaImage = ref();
 getCaptchaImage();
 function getCaptchaImage() {
   try {
     getCaptcha().then(res => {
-      //console.log(res);
-      captchaBase64Image.value = res.data.captchaImage;
+      //const respData = 'data:image/png;base64,' + btoa(new Uint8Array(res.data).reduce((data, byte) => data + String.fromCharCode(byte), ''));
+      captchaImage.value = res.data.captchaImage;
       param.captchaUuid = res.data.captchaUuid;
     });
   } catch (e) {
@@ -103,22 +93,13 @@ const submitForm = (formEl: FormInstance | undefined) => {
   if (!formEl) return;
   formEl.validate((valid: boolean) => {
     if (valid) {
-      // ElMessage.success('登录成功');
-      // localStorage.setItem('ms_username', param.userName);
-      // const keys = permiss.defaultList[param.userName == 'admin' ? 'admin' : 'user'];
-      // permiss.handleSet(keys);
-      // localStorage.setItem('ms_keys', JSON.stringify(keys));
-      // router.push('/');
       doLogin(param).then(res => {
         let { code, data, msg } = res;
-        if(code=='SUCCESS') {
-          //console.log(res);
+        if(code === 'SUCCESS') {
           ElMessage.success('登录成功');
-          localStorage.setItem('ms_username', param.userName);
-          const keys = permiss.defaultList[param.userName == 'admin' ? 'admin' : 'user'];
-          permiss.handleSet(keys);
-          localStorage.setItem('ms_keys', JSON.stringify(keys));
-          router.push('/');
+          localStorage.setItem('token', data);
+          //查询菜单，生成路由
+          getMenuRoute();
         }else {
           ElMessage.error('账号密码或验证码输入错误');
         }
@@ -129,6 +110,61 @@ const submitForm = (formEl: FormInstance | undefined) => {
     }
   });
 };
+
+interface MenuItem {
+  id: number;
+  parentId:number;
+  name: string;
+  icon: string;
+  url: string;
+  perm: string;
+  children: MenuItem[];
+}
+
+//查询菜单
+function getMenuRoute() {
+  getNav().then(res => {
+    console.log(JSON.stringify(res));
+    let items: MenuItem[] = res.data.menuList;
+    //保存用户所具有的的菜单权限
+    const permStore = usePermissStore();
+    permStore.setPerms(res.data.permList);
+    //console.log("ms_perms-----", res.data.permList);
+    //根据菜单生成路由
+    const menuRoutes = generateRoutes(items);
+    //生成首页路由
+    const homeRoute: RouteRecordRaw = { path:'/', name:'home', children: menuRoutes,
+      component: () => import('../views/home.vue'),
+    };
+    router.addRoute(homeRoute);
+    //跳转到首页
+    router.push("/");
+  });
+};
+
+const modules = import.meta.glob('../views/*.vue')
+function generateRoutes(items: MenuItem[]) {
+  //const itemMap: Record<number, RouteRecordRaw> = {};
+  const menuRoutes: RouteRecordRaw[] = [];
+  for (const item of items) {
+    if(item.children) {
+      generateRoutes(item.children);
+    }else {
+      const node: RouteRecordRaw = {
+        path:item.url,
+        name:item.url.substring(1) ,
+        children: [],
+        meta:{
+          title: item.name,
+          perm: item.perm
+        }
+      };
+      node.component = modules['../views' + item.url + '.vue']
+      menuRoutes.push(node);
+    }
+  }
+  return menuRoutes;
+}
 
 const tags = useTagsStore();
 tags.clearTags();
