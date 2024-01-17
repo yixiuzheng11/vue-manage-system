@@ -64,7 +64,7 @@ const onRoutes = computed(() => {
 const sidebarStore = useSidebarStore();
 const permStore = usePermissStore();
 const items = permStore.menus;
-console.log(items);
+
 </script>
 
 <style scoped>

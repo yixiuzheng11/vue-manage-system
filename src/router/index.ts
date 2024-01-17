@@ -4,24 +4,24 @@ import { usePermissStore } from '../store/permiss';
 const routes: RouteRecordRaw[] = [
     {
         path: '/',
-        redirect: '/dashboard',
+        redirect: '/login',
     },
-    {
-        path: '/',
-        name: 'home',
-        component: () => import('../views/home.vue'),
-        children: [
-            {
-                path: '/dashboard',
-                name: 'dashboard',
-                meta: {
-                    title: '系统首页',
-                    permiss: '1',
-                },
-                component: () => import(/* webpackChunkName: "dashboard" */ '../views/dashboard.vue'),
-            },
-        ]
-    },
+    // {
+    //     path: '/',
+    //     name: 'home',
+    //     component: () => import('../views/home.vue'),
+    //     children: [
+    //         {
+    //             path: '/dashboard',
+    //             name: 'dashboard',
+    //             meta: {
+    //                 title: '系统首页',
+    //                 permiss: '1',
+    //             },
+    //             component: () => import(/* webpackChunkName: "dashboard" */ '../views/dashboard.vue'),
+    //         },
+    //     ]
+    // },
     // {
     //     path: '/',
     //     name: 'home',

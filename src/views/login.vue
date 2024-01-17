@@ -44,17 +44,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, createHydrationRenderer, onMounted } from 'vue';
+import { ref, reactive } from 'vue';
 import { useTagsStore } from '../store/tags';
 import { usePermissStore } from '../store/permiss';
-import {RouteRecordRaw, useRouter} from 'vue-router';
 import { ElMessage } from 'element-plus';
 import type { FormInstance, FormRules } from 'element-plus';
 import { Lock, User } from '@element-plus/icons-vue';
 import {getCaptcha, doLogin, LoginParam} from '../api/login';
-import {getNav} from "../api";
+import router from "../router";
 
-const router = useRouter();
 const param = reactive<LoginParam>({
   userName: 'admin',
   password: '123123',
@@ -87,7 +85,8 @@ const rules: FormRules = {
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
   captchaCode: [{ required: true, message: '请输入验证码', trigger: 'blur' }]
 };
-const permiss = usePermissStore();
+
+const permissStore = usePermissStore();
 const login = ref<FormInstance>();
 const submitForm = (formEl: FormInstance | undefined) => {
   if (!formEl) return;
@@ -99,7 +98,13 @@ const submitForm = (formEl: FormInstance | undefined) => {
           ElMessage.success('登录成功');
           localStorage.setItem('token', data);
           //查询菜单，生成路由
-          getMenuRoute();
+          permissStore.generateRoutes().then(routes=>{
+            routes.forEach(data=>{
+              router.addRoute(data);
+            });
+            //跳转到首页
+            router.push("/dashboard");
+          })
         }else {
           ElMessage.error('账号密码或验证码输入错误');
         }
@@ -110,60 +115,6 @@ const submitForm = (formEl: FormInstance | undefined) => {
     }
   });
 };
-
-interface MenuItem {
-  id: number;
-  parentId:number;
-  name: string;
-  icon: string;
-  url: string;
-  perm: string;
-  children: MenuItem[];
-}
-
-//查询菜单
-const permStore = usePermissStore();
-function getMenuRoute() {
-  getNav().then(res => {
-    let menus: MenuItem[] = res.data.menuList;
-    //保存用户所具有的的菜单权限
-    permStore.setPerms(res.data.permList);
-    permStore.setMenus(menus);
-    //根据菜单生成路由
-    const menuRoutes = generateRoutes(menus);
-    //生成首页路由
-    const homeRoute: RouteRecordRaw = { path:'/', name:'home', children: menuRoutes,
-      component: () => import('../views/home.vue'),
-    };
-    router.addRoute(homeRoute);
-    //跳转到首页
-    router.push("/");
-  });
-};
-
-const modules = import.meta.glob('../views/*.vue')
-function generateRoutes(items: MenuItem[]) {
-  //const itemMap: Record<number, RouteRecordRaw> = {};
-  const menuRoutes: RouteRecordRaw[] = [];
-  for (const item of items) {
-    if(item.children) {
-      generateRoutes(item.children);
-    }else {
-      const node: RouteRecordRaw = {
-        path:item.url,
-        name:item.url.substring(1) ,
-        children: [],
-        meta:{
-          title: item.name,
-          perm: item.perm
-        }
-      };
-      node.component = modules['../views' + item.url + '.vue']
-      menuRoutes.push(node);
-    }
-  }
-  return menuRoutes;
-}
 
 const tags = useTagsStore();
 tags.clearTags();
